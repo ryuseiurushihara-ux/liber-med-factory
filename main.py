@@ -5,7 +5,9 @@ from google import genai
 from Bio import Entrez
 
 # --- ARCHITECTURE CONFIGURATION ---
-MODEL_ID = "models/gemini-1.5-flash"
+# 最新SDK(google-genai)では、"gemini-1.5-flash" または "gemini-2.0-flash" 
+# という短い名称を直接指定するのが現在のベストプラクティスです。
+MODEL_ID = "gemini-1.5-flash" 
 EMAIL_IDENTITY = "intelligence@liber-med.io"
 REVENUE_THRESHOLD = int(os.getenv("TOTAL_REVENUE_LIMIT", 150000))
 
@@ -46,6 +48,7 @@ def generate_sovereign_report(client, data, pmid):
     ※出力は専門的かつ、知的な優雅さを感じさせる日本語で行うこと。
     """
     
+    # モデル指定の引数を model=MODEL_ID に固定
     response = client.models.generate_content(model=MODEL_ID, contents=prompt)
     return response.text
 
@@ -53,6 +56,8 @@ def main():
     # 1. Initialize System
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key: raise ValueError("Critical Error: API Key Absent.")
+    
+    # 2026年最新のクライアント初期化
     client = genai.Client(api_key=api_key)
     
     os.makedirs("reports", exist_ok=True)
@@ -71,7 +76,7 @@ def main():
         f.write(report)
         f.write(f"\n\n--- \n*This report is part of the Liber-Med Sovereign Wealth Project. Limit: {REVENUE_THRESHOLD} JPY.*")
 
-    # 5. Metadata for Future Scalability (NISA / Revenue Management)
+    # 5. Metadata for Future Scalability
     meta = {"date": today, "pmid": pmid, "status": "completed", "value_score": "high"}
     with open(f"metadata/{today}.json", "w") as f:
         json.dump(meta, f)
