@@ -1,17 +1,18 @@
 import os
 import json
 import datetime
+import time
 from google import genai
 from Bio import Entrez
 
 # --- ARCHITECTURE CONFIGURATION ---
-# 2026年現在の最適な安定版を直接指定します
-MODEL_ID = "gemini-1.5-flash" 
+# 2026年現在の最強モデル「Pro」を先頭に、安定の「Flash」を控えに配置
+TRIED_MODELS = ["gemini-1.5-pro", "gemini-1.5-flash", "gemini-2.0-flash"]
 EMAIL_IDENTITY = "intelligence@liber-med.io"
 REVENUE_THRESHOLD = int(os.getenv("TOTAL_REVENUE_LIMIT", 150000))
 
 def get_clinical_insight():
-    """世界中の未解決疾患に対する既存薬の転用可能性を抽出する"""
+    """PubMedから世界の難病治療の種を拾う"""
     Entrez.email = EMAIL_IDENTITY
     search_query = "(orphan diseases[MeSH Terms]) AND (drug repositioning[Title/Abstract])"
     
@@ -30,61 +31,59 @@ def get_clinical_insight():
         return f"Data acquisition failed: {e}", "Error"
 
 def generate_sovereign_report(client, data, pmid):
-    """最高級の分析レポートを生成"""
+    """最高級の分析レポートを生成（多重バックアップ体制）"""
     prompt = f"""
     あなたは世界最高峰のバイオテック投資家兼医学博士です。
-    以下の論文抄録を読み、Markdown形式で分析してください。
-    1. 【Executive Summary】 2. 【The Logic of Repositioning】 
-    3. 【Market Potential】 4. 【Future Action】
+    以下の論文抄録を読み、富裕層向けの『最高級の投資・研究インサイト』を執筆してください。
+
+    1. 【Executive Summary】 
+    2. 【The Logic of Repositioning】 
+    3. 【Market Potential & Social Impact】 
+    4. 【Ethics & Future Action】
 
     Context: {data}
     PMID: {pmid}
+    ※知的で優雅な日本語で出力すること。
     """
     
-    # 修正ポイント: 複数のモデル名を試行するフェイルセーフ構造
-    tried_models = [MODEL_ID, "gemini-2.0-flash", "gemini-1.5-flash-002"]
-    
-    for model_name in tried_models:
+    for model_name in TRIED_MODELS:
         try:
-            print(f"Attempting with model: {model_name}...")
+            print(f"Executing with engine: {model_name}...")
             response = client.models.generate_content(
                 model=model_name, 
                 contents=prompt
             )
-            return response.text
+            if response.text:
+                return response.text
         except Exception as e:
-            print(f"Model {model_name} failed: {e}")
+            print(f"Engine {model_name} currently warming up... (Error: {e})")
+            time.sleep(2) # サーバーへの負荷を考慮した紳士的な待機
             continue
             
-    raise Exception("All attempted models failed. Please check Google AI Studio project status.")
+    raise Exception("All engines are currently in maintenance. Please wait for Google's activation.")
 
 def main():
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key: raise ValueError("Critical Error: API Key Absent.")
     
-    # クライアント初期化
     client = genai.Client(api_key=api_key)
     
     os.makedirs("reports", exist_ok=True)
     os.makedirs("metadata", exist_ok=True)
     today = datetime.date.today().strftime("%Y-%m-%d")
 
-    # データ取得
     abstract, pmid = get_clinical_insight()
-
-    # AI解析（フェイルセーフ実行）
     report = generate_sovereign_report(client, abstract, pmid)
 
-    # 保存
     report_path = f"reports/{today}_insight.md"
     with open(report_path, "w", encoding="utf-8") as f:
         f.write(report)
-        f.write(f"\n\n--- \n*Sovereign Wealth Project. Limit: {REVENUE_THRESHOLD} JPY.*")
+        f.write(f"\n\n--- \n*Sovereign Wealth Management. Annual Limit: {REVENUE_THRESHOLD} JPY.*")
 
     with open(f"metadata/{today}.json", "w") as f:
-        json.dump({"date": today, "pmid": pmid, "status": "completed"}, f)
+        json.dump({"date": today, "pmid": pmid, "status": "active"}, f)
 
-    print(f"Success: {report_path}")
+    print(f"Sovereign Intelligence Unit: Report stabilized at {report_path}")
 
 if __name__ == "__main__":
     main()
