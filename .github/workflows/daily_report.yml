@@ -1,0 +1,38 @@
+name: Autonomous Drug Discovery Bot
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # 毎日自動実行
+  workflow_dispatch: # 手動で動かすボタンを表示
+
+permissions:
+  contents: write # 結果を書き込む許可
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install biopython google-generativeai
+
+      - name: Run Factory Script
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python main.py
+
+      - name: Commit and Push changes
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add reports/*.md
+          git commit -m "Update daily insight [$(date +'%Y-%m-%d')]" || echo "No changes to commit"
+          git push
