@@ -5,7 +5,7 @@ from google import genai
 from Bio import Entrez
 
 # --- ARCHITECTURE CONFIGURATION ---
-MODEL_ID = "gemini-2.0-flash"
+MODEL_ID = "gemini-1.5-flash"
 EMAIL_IDENTITY = "intelligence@liber-med.io"
 REVENUE_THRESHOLD = int(os.getenv("TOTAL_REVENUE_LIMIT", 150000))
 
