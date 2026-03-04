@@ -1,38 +1,56 @@
-name: Autonomous Drug Discovery Bot
+name: 🛡️ Liber Med Autonomous Engine
 
+# --- EXECUTION TRIGGERS ---
 on:
   schedule:
-    - cron: '0 0 * * *' # 毎日自動実行
-  workflow_dispatch: # 手動で動かすボタンを表示
+    - cron: '0 0 * * *' # 毎日日本時間午前9時（UTC 0:00）に自動起動
+  workflow_dispatch:     # 管理者が手動で「今すぐ実行」できるボタンを設置
 
+# --- SYSTEM PERMISSIONS ---
 permissions:
-  contents: write # 結果を書き込む許可
+  contents: write       # 生成したレポートをリポジトリに保存するために必須
 
+# --- PRODUCTION PIPELINE ---
 jobs:
-  run-bot:
+  autonomous-production:
     runs-on: ubuntu-latest
+    timeout-minutes: 15 # 異常時の無限ループ防止
+    
     steps:
-      - name: Checkout code
+      - name: 📂 Checkout Repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # 全履歴を取得し、Gitコンフリクトを最小化
 
-      - name: Set up Python
+      - name: 🐍 Setup Advanced Python Environment
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.12' # 2026年最新の安定版
+          cache: 'pip'          # 2回目以降の実行を高速化
 
-      - name: Install dependencies
+      - name: 📦 Install High-Performance Libraries
         run: |
-          pip install biopython google-generativeai
+          python -m pip install --upgrade pip
+          pip install google-genai biopython pandas
 
-      - name: Run Factory Script
+      - name: 🚀 Execute Liber Med AI Analysis
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          TOTAL_REVENUE_LIMIT: 150000 # 15万円リミッター設定
         run: python main.py
 
-      - name: Commit and Push changes
+      - name: 💾 Commit & Sync Sovereign Data
         run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add reports/*.md
-          git commit -m "Update daily insight [$(date +'%Y-%m-%d')]" || echo "No changes to commit"
-          git push
+          git config --local user.email "autonomous-bot@liber-med.io"
+          git config --local user.name "LiberMed-Autonomous-Bot"
+          
+          # 新しく作られたレポートとメタデータをすべて追加
+          git add reports/*.md metadata/*.json
+          
+          # 変更がある場合のみコミットしてサーバーへ送信
+          if ! git diff --cached --quiet; then
+            git commit -m "feat: publish daily medical insight $(date +'%Y-%m-%d') [skip ci]"
+            git push origin main
+          else
+            echo "No new insights to publish today."
+          fi
